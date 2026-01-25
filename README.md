@@ -4,6 +4,7 @@ A visual breakdown of household assets and wealth distribution in Singapore.
 
 [**View Demo Site**](https://golden-semifreddo-252539.netlify.app/)
 
+---
 
 ### Net Worth Breakdown
 *Values in SGD millions*
@@ -21,4 +22,5 @@ A visual breakdown of household assets and wealth distribution in Singapore.
     * **Residential Property (1,583,577.0)**
         * Private Housing
         * Public Housing
+
 
