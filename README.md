@@ -2,7 +2,7 @@
 
 A visual breakdown of household assets and wealth distribution in Singapore.
 
-[**View Demo Site**](https://golden-semifreddo-252539.netlify.app/)
+[**View Demo Site**](https://tzjtan.github.io/Singapore-household-balance-breakdown/)
 
 ---
 
