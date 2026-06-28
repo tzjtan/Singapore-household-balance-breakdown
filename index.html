@@ -7,18 +7,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
-<body class="bg-gray-50 h-screen overflow-hidden flex flex-col p-4 items-center">
-    <div class="flex-1 flex flex-col min-h-0 items-center w-full">
+<body class="bg-gray-50 min-h-screen flex flex-col p-3 items-center">
+    <div class="flex flex-col items-center w-full">
 
-        <!-- Slider -->
-        <div class="bg-white rounded-lg shadow-sm p-4 mb-3 mx-auto" style="max-width: 1500px; width: 100%;">
-            <div class="flex items-center gap-4">
-                <label for="quarterSlider" class="text-sm font-medium text-gray-700 whitespace-nowrap">Quarter:</label>
+        <!-- Controls: single row with slider, mode toggles, and segment selector -->
+        <div class="bg-white rounded-lg shadow-sm p-3 mb-3 mx-auto w-full" style="max-width: 1500px;">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600">
+                <!-- Slider (narrow, fixed width) -->
+                <label for="quarterSlider" class="font-medium text-gray-700 whitespace-nowrap">Quarter:</label>
                 <input type="range" id="quarterSlider" min="0" max="0" value="0"
                     oninput="plot_sankey_from_slider()"
-                    class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                <span id="quarterLabel" class="text-sm font-medium text-gray-700 min-w-[80px] text-right">Loading...</span>
-                <div class="flex items-center gap-3 ml-4 pl-4 border-l border-gray-200 text-sm text-gray-600">
+                    class="h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" style="width: 120px;">
+                <span id="quarterLabel" class="font-medium text-gray-700 whitespace-nowrap">Loading...</span>
+
+                <!-- Per-person / Per-household -->
+                <div class="flex items-center gap-2 ml-8 pl-8 pr-8 border-l border-gray-200 whitespace-nowrap">
                     <label class="flex items-center gap-1 cursor-pointer">
                         <input type="radio" name="sankeyMode" value="person" checked onchange="plot_sankey()">
                         Per person
@@ -28,36 +31,79 @@
                         Per household
                     </label>
                 </div>
+
+                <!-- Quintile segment selector (non-Average options only active for 2026 Q1) -->
+                <div class="flex items-center gap-2 pl-8 border-l border-gray-200 flex-wrap">
+                    <span class="font-medium text-gray-700 whitespace-nowrap">Segment:</span>
+                    <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap">
+                        <input type="radio" name="quintileMode" value="Average" checked onchange="plot_sankey()">
+                        Average
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'Bottom 20%')">
+                        <input type="radio" name="quintileMode" value="Bottom 20%" onchange="plot_sankey()">
+                        Bottom 20%
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'21st–40th')">
+                        <input type="radio" name="quintileMode" value="21st–40th" onchange="plot_sankey()">
+                        21st–40th
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'Middle 20%')">
+                        <input type="radio" name="quintileMode" value="Middle 20%" onchange="plot_sankey()">
+                        Middle 20%
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'61st–80th')">
+                        <input type="radio" name="quintileMode" value="61st–80th" onchange="plot_sankey()">
+                        61st–80th
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'Top 20%')">
+                        <input type="radio" name="quintileMode" value="Top 20%" onchange="plot_sankey()">
+                        Top 20%
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'Top 5%')">
+                        <input type="radio" name="quintileMode" value="Top 5%" onchange="plot_sankey()">
+                        Top 5%
+                    </label>
+                    <label class="flex items-center gap-1 whitespace-nowrap quintile-option" onclick="quintile_label_click(event,'Top 1%')">
+                        <input type="radio" name="quintileMode" value="Top 1%" onchange="plot_sankey()">
+                        Top 1%
+                    </label>
+                </div>
             </div>
         </div>
 
-        <!-- Charts row -->
-        <div class="flex gap-4 flex-1 min-h-0 mx-auto" style="max-width: 1500px; max-height: 760px; width: 100%;">
+        <!-- Charts row: right panel on top on mobile, side-by-side on desktop -->
+        <div class="flex flex-col md:flex-row gap-3 w-full mx-auto" style="max-width: 1500px;">
 
-            <!-- Sankey (left, 80%) -->
-            <div class="bg-white rounded-lg shadow-sm p-4" style="width: 80%;">
-                <div id="sankeyPlot" class="w-full h-full"></div>
-            </div>
-
-            <!-- Right panel (20%) — stats+trend on top, pie on bottom -->
-            <div class="flex flex-col gap-3" style="width: 20%;">
-                <div class="bg-white rounded-lg shadow-sm p-3 flex flex-col" style="flex: 1; min-height: 0;">
+            <!-- Right panel: appears first (top) on mobile, second (right) on desktop -->
+            <div class="flex flex-col gap-3 order-1 md:order-2 w-full md:w-1/5 shrink-0">
+                <div class="bg-white rounded-lg shadow-sm p-3 flex flex-col" style="min-height: 220px; flex: 1;">
                     <div id="currentStats" class="text-xs text-gray-700 mb-2 shrink-0"></div>
-                    <div id="statsChart" style="flex: 1; min-height: 0;"></div>
+                    <div id="statsChart" style="flex: 1; min-height: 180px;"></div>
                 </div>
-                <div class="bg-white rounded-lg shadow-sm p-2" style="height: 42%;">
+                <div class="bg-white rounded-lg shadow-sm p-2" style="height: 260px;">
                     <div id="pieChart" class="w-full h-full"></div>
                 </div>
             </div>
+
+            <!-- Sankey: appears second (bottom) on mobile, first (left) on desktop -->
+            <div class="bg-white rounded-lg shadow-sm p-4 order-2 md:order-1 w-full" style="flex: 1; min-height: 480px;">
+                <div id="sankeyPlot" class="w-full h-full" style="min-height: 460px;"></div>
+            </div>
+
         </div>
 
-        <div class="mt-2 text-xs text-gray-500 text-center" style="max-width: 1500px; width: 100%;">
+        <!-- Footer / disclaimer -->
+        <div class="mt-3 text-xs text-gray-500 text-center px-2" style="max-width: 1500px; width: 100%;">
             Data: <a href="https://data.gov.sg/datasets/d_c14a14d2f870e909268a9be5970e7d87/view" target="_blank" class="text-blue-600 hover:underline">Household Sector Balance Sheet</a>
             &nbsp;·&nbsp;
             <a href="https://data.gov.sg/datasets/d_2bc812dbfd1e485638435fcdf7aac196/view" target="_blank" class="text-blue-600 hover:underline">Resident Households by Size</a>
             &nbsp;·&nbsp;
             <a href="https://data.gov.sg/datasets/d_bdaff844e3ef89d39fceb962ff8f0791/view" target="_blank" class="text-blue-600 hover:underline">Consumer Price Index</a>
             &nbsp;— SingStat / data.gov.sg
+            <br class="mt-1">
+            Data for the "Average" segment comes from the SingStat Household Sector Balance Sheet above, while estimates for each wealth percentile group are derived by scaling those averages according to Table B1 in the
+            MOF Occasional Paper on Income Growth, Inequality, and Social Mobility Trends in Singapore (February 2026).
+            For the top 5% and top 1%, only total wealth is available from Parliamentary Questions (25 Feb 2026); the breakdown across asset and liability categories is assumed to follow the same proportions as the top 20%, scaled to match the reported total wealth.
         </div>
     </div>
 
@@ -69,6 +115,147 @@
         var cpi_data = {};        // {year: cpiValue} annual (Dec or latest month)
         var cpi_ref_year = null;  // latest year with CPI data
         var cpi_ref = null;       // CPI value of that year
+
+        // Table B1: Ministry of Finance Occasional Paper (February 2026)
+        // Values in S$ thousands per household. Columns: Overall, 0–20%, 21–40%, 41–60%, 61–80%, 81–100%, Top 5%, Top 1%
+        var table_b1_data = {
+            "columns": [
+                "Overall",
+                "0 to 20 percentile",
+                "21 to 40 percentile",
+                "41 to 60 percentile",
+                "61 to 80 percentile",
+                "81 to 100 percentile",
+                "Top 5 percent",
+                "Top 1 percent"
+            ],
+            "data": {
+                "Property Asset Value":    [1121, 221, 500,  634,  861,  3388],
+                "Net CPF Balances":        [ 387, 114, 199,  328,  520,   771],
+                "Other Financial Assets":  [ 401,  29,  68,  142,  330,  1435],
+                "Total Assets (A)":        [1909, 365, 768, 1105, 1711,  5595],
+                "Mortgages":              [ 146,  64,  97,  105,  146,   317],
+                "Other Liabilities":       [   8,   8,   5,    6,    7,    13],
+                "Total Liabilities (B)":   [ 153,  71, 101,  111,  153,   331],
+                // Top 5% and Top 1% total wealth from MOF parliamentary Q&A (25 Feb 2026)
+                "Total Wealth (A-B)":      [1755, 293, 666,  994, 1558,  5264, 11583, 24570]
+            }
+        };
+
+        // Segment selector options: label → column index in table_b1_data arrays
+        var SEGMENT_OPTIONS = [
+            { label: "Average",    col: 0 },
+            { label: "Bottom 20%", col: 1 },
+            { label: "21st–40th",  col: 2 },
+            { label: "Middle 20%", col: 3 },
+            { label: "61st–80th",  col: 4 },
+            { label: "Top 20%",    col: 5 },
+            { label: "Top 5%",     col: 6 },
+            { label: "Top 1%",     col: 7 }
+        ];
+
+        // ── Scaling ───────────────────────────────────────────────────────────
+
+        // Returns per-field scale factors relative to the overall average,
+        // based on Table B1. Returns null when segment is "Average" (no scaling).
+        function getSegmentScales(col) {
+            if (col === 0) return null;
+
+            const b1 = table_b1_data.data;
+
+            if (col <= 5) {
+                // Direct B1 data exists for quintiles (col 1–5).
+                // Scale factor = segment value / overall value for each mapped component.
+                return {
+                    cpf:          b1["Net CPF Balances"][col]     / b1["Net CPF Balances"][0],
+                    otherFin:     b1["Other Financial Assets"][col]/ b1["Other Financial Assets"][0],
+                    property:     b1["Property Asset Value"][col]  / b1["Property Asset Value"][0],
+                    mortgages:    b1["Mortgages"][col]             / b1["Mortgages"][0],
+                    personalLoans:b1["Other Liabilities"][col]     / b1["Other Liabilities"][0]
+                };
+            }
+
+            // Top 5% (col 6) and Top 1% (col 7): only Total Wealth is available.
+            // Assumption: these segments share the same internal proportions as the Top 20%.
+            // Method:
+            //   1. Use Top 20% ratios: TotalAssets/TotalWealth and TotalLiabilities/TotalWealth.
+            //   2. Estimate this segment's TotalAssets and TotalLiabilities from its known TotalWealth.
+            //   3. Distribute estimated TotalAssets/TotalLiabilities using Top 20% component proportions.
+            //   4. Scale factor = estimated component / overall component.
+            const top20W  = b1["Total Wealth (A-B)"][5];
+            const top20A  = b1["Total Assets (A)"][5];
+            const top20L  = b1["Total Liabilities (B)"][5];
+            const segW    = b1["Total Wealth (A-B)"][col];
+
+            const estA = segW * (top20A / top20W);   // estimated total assets
+            const estL = segW * (top20L / top20W);   // estimated total liabilities
+
+            return {
+                cpf:          (estA * b1["Net CPF Balances"][5]    / top20A) / b1["Net CPF Balances"][0],
+                otherFin:     (estA * b1["Other Financial Assets"][5]/ top20A) / b1["Other Financial Assets"][0],
+                property:     (estA * b1["Property Asset Value"][5] / top20A) / b1["Property Asset Value"][0],
+                mortgages:    (estL * b1["Mortgages"][5]            / top20L) / b1["Mortgages"][0],
+                personalLoans:(estL * b1["Other Liabilities"][5]    / top20L) / b1["Other Liabilities"][0]
+            };
+        }
+
+        // Applies segment scale factors to the per-capita data object and recomputes aggregates.
+        // Mappings from SingStat balance sheet fields to Table B1 categories:
+        //   "Central Provident Fund (CPF)"              → "Net CPF Balances"
+        //   non-CPF financial assets (Currency, Shares, Life Insurance, Pension Funds) → "Other Financial Assets"
+        //   "Residential Property Assets" (+ sub-items) → "Property Asset Value"
+        //   mortgage sub-items (Financial Institutions, HDB) + "Mortgage Loans" → "Mortgages"
+        //   personal-loan sub-items (Credit Cards, Motor, Others) + "Personal Loans" → "Other Liabilities"
+        function applySegmentScaling(data, scales) {
+            if (!scales) return data;
+
+            const s = Object.assign({}, data);
+
+            // CPF maps directly
+            s["Central Provident Fund (CPF)"] = (data["Central Provident Fund (CPF)"] || 0) * scales.cpf;
+
+            // All non-CPF financial asset components share the "Other Financial Assets" ratio
+            const otherFinFields = [
+                "Currency & Deposits", "Shares & Securities", "Life Insurance", "Pension Funds",
+                "Listed Shares", "Unlisted Shares", "Unit Trusts & Investment Funds"
+            ];
+            for (const f of otherFinFields) {
+                s[f] = (data[f] || 0) * scales.otherFin;
+            }
+
+            // Recompute Financial Assets from scaled sub-components
+            s["Financial Assets"] =
+                s["Central Provident Fund (CPF)"] +
+                (s["Currency & Deposits"] || 0) +
+                (s["Shares & Securities"] || 0) +
+                (s["Life Insurance"] || 0) +
+                (s["Pension Funds"] || 0);
+
+            // Residential property and its sub-items
+            s["Residential Property Assets"] = (data["Residential Property Assets"] || 0) * scales.property;
+            s["Private Housing"] = (data["Private Housing"] || 0) * scales.property;
+            s["Public Housing"]  = (data["Public Housing"]  || 0) * scales.property;
+
+            // Recompute total assets
+            s["Assets"] = s["Financial Assets"] + s["Residential Property Assets"];
+
+            // Mortgages: sub-items and the rolled-up total
+            s["Financial Institutions"]          = (data["Financial Institutions"]          || 0) * scales.mortgages;
+            s["Housing & Development Board (HDB)"]= (data["Housing & Development Board (HDB)"]|| 0) * scales.mortgages;
+            s["Mortgage Loans"]                  = (data["Mortgage Loans"]                  || 0) * scales.mortgages;
+
+            // Personal loans: sub-items and the rolled-up total
+            s["Credit/Charge Cards"] = (data["Credit/Charge Cards"] || 0) * scales.personalLoans;
+            s["Motor Vehicle"]       = (data["Motor Vehicle"]       || 0) * scales.personalLoans;
+            s["Others"]              = (data["Others"]              || 0) * scales.personalLoans;
+            s["Personal Loans"]      = (data["Personal Loans"]      || 0) * scales.personalLoans;
+
+            // Recompute liabilities and net worth
+            s["Liabilities"]        = s["Mortgage Loans"] + s["Personal Loans"];
+            s["Household Net Worth"] = s["Assets"] - s["Liabilities"];
+
+            return s;
+        }
 
         // ── Formatting ───────────────────────────────────────────────────────
 
@@ -83,8 +270,8 @@
         }
 
         function formatDollars(v) {
-            if (v >= 1e6) return `S$${(v / 1e6).toFixed(2)}M`;
-            if (v >= 1e3) return `S$${(v / 1e3).toFixed(1)}k`;
+            if (Math.abs(v) >= 1e6) return `S$${(v / 1e6).toFixed(2)}M`;
+            if (Math.abs(v) >= 1e3) return `S$${(v / 1e3).toFixed(1)}k`;
             return `S$${v.toFixed(0)}`;
         }
 
@@ -109,7 +296,6 @@
 
             const result = {};
             for (const [year, months] of Object.entries(byYear)) {
-                // Prefer December; otherwise take the last available month
                 if (months['Dec'] !== undefined) {
                     result[parseInt(year)] = months['Dec'];
                 } else {
@@ -124,7 +310,6 @@
         }
 
         function get_cpi(year) {
-            // Nearest year <= given year
             if (cpi_data[year] !== undefined) return cpi_data[year];
             const years = Object.keys(cpi_data).map(Number).sort((a, b) => a - b);
             let best = null;
@@ -133,7 +318,6 @@
         }
 
         function deflator(year) {
-            // Multiply nominal value by this to get real value in cpi_ref_year terms
             const c = get_cpi(year);
             return (c && cpi_ref) ? cpi_ref / c : 1;
         }
@@ -229,6 +413,54 @@
 
         // ── Controls ─────────────────────────────────────────────────────────
 
+        // Quarter key that matches the Table B1 data (MOF Occasional Paper, February 2026)
+        const QUINTILE_QUARTER = '20261Q';
+
+        // Enable/disable the non-Average quintile options depending on whether
+        // the currently selected quarter is the one the B1 data is valid for.
+        function update_quintile_state() {
+            const i = parseInt(document.getElementById('quarterSlider').value);
+            const quarter = all_quarters[i];
+            const isB1Quarter = (quarter === QUINTILE_QUARTER);
+
+            document.querySelectorAll('label.quintile-option').forEach(label => {
+                const input = label.querySelector('input');
+                if (isB1Quarter) {
+                    input.disabled = false;
+                    label.style.opacity = '';
+                    label.style.cursor = 'pointer';
+                } else {
+                    input.disabled = true;
+                    label.style.opacity = '0.35';
+                    label.style.cursor = 'not-allowed';
+                }
+            });
+
+            // If switching away from the B1 quarter, reset segment to Average
+            if (!isB1Quarter) {
+                document.querySelector('input[name="quintileMode"][value="Average"]').checked = true;
+            }
+        }
+
+        // Called when the user clicks a disabled quintile label: jumps to 2026 Q1,
+        // enables the options, selects the clicked value, and re-plots.
+        function quintile_label_click(event, value) {
+            const i = parseInt(document.getElementById('quarterSlider').value);
+            const quarter = all_quarters[i];
+            if (quarter !== QUINTILE_QUARTER) {
+                event.preventDefault(); // prevent default label→input forwarding
+                const idx = all_quarters.indexOf(QUINTILE_QUARTER);
+                if (idx === -1) return; // 2026 Q1 not yet in dataset
+                const slider = document.getElementById('quarterSlider');
+                slider.value = idx;
+                document.getElementById('quarterLabel').textContent = formatQuarter(QUINTILE_QUARTER);
+                update_quintile_state(); // re-enables the options
+                document.querySelector(`input[name="quintileMode"][value="${value}"]`).checked = true;
+                plot_sankey();
+                update_trend_line();
+            }
+        }
+
         function refresh_controls() {
             all_quarters = Object.keys(all_data).sort();
             const slider = document.getElementById('quarterSlider');
@@ -236,6 +468,7 @@
             slider.value = all_quarters.length - 1;
             if (all_quarters.length > 0) {
                 document.getElementById('quarterLabel').textContent = formatQuarter(all_quarters[all_quarters.length - 1]);
+                update_quintile_state();
                 plot_sankey();
             }
         }
@@ -243,6 +476,7 @@
         function plot_sankey_from_slider() {
             const i = parseInt(document.getElementById('quarterSlider').value);
             document.getElementById('quarterLabel').textContent = formatQuarter(all_quarters[i]);
+            update_quintile_state();
             plot_sankey();
             update_trend_line();
         }
@@ -276,7 +510,6 @@
             const td = build_trend_data();
             if (td.years.length === 0) return;
 
-            // Index so the last point = 100
             function idxLast(arr) {
                 const last = arr[arr.length - 1];
                 return arr.map(v => +(v / last * 100).toFixed(1));
@@ -285,7 +518,7 @@
             const refLabel = cpi_ref_year ? ` (real ${cpi_ref_year})` : '';
 
             const traces = [
-                { name: 'Resident Households',   y: idxLast(td.hh),           color: '#10b981', dash: 'dot' },
+                { name: 'Resident Households',   y: idxLast(td.hh),            color: '#10b981', dash: 'dot' },
                 { name: `Per HH${refLabel}`,     y: idxLast(td.perHH_real),    color: '#3b82f6' },
                 { name: `Per Person${refLabel}`, y: idxLast(td.perPerson_real), color: '#f59e0b' },
                 { name: 'CPI (All Items)',        y: idxLast(td.cpi_arr),        color: '#ef4444', dash: 'dash' },
@@ -388,27 +621,46 @@
                     </div>
                 </div>`;
 
-            // Scale values for Sankey based on selected mode
+            // Step 1: Convert national totals (millions) to per-person or per-household values
             const mode = document.querySelector('input[name="sankeyMode"]:checked')?.value ?? 'person';
             const divisor = mode === 'household' ? households : population;
             function scaleReal(valueM) {
                 if (!divisor || !valueM) return 0;
                 return (valueM * 1e6) / divisor * d;
             }
-            const data = {};
-            for (const [k, v] of Object.entries(rawData)) data[k] = scaleReal(v);
+            const perCapita = {};
+            for (const [k, v] of Object.entries(rawData)) perCapita[k] = scaleReal(v);
+
+            // Step 2: Apply quintile segment scaling using Table B1 ratios
+            const selectedSegment = document.querySelector('input[name="quintileMode"]:checked')?.value ?? 'Average';
+            const segmentCol = (SEGMENT_OPTIONS.find(s => s.label === selectedSegment) ?? SEGMENT_OPTIONS[0]).col;
+            const scales = getSegmentScales(segmentCol);
+            const data = applySegmentScaling(perCapita, scales);
+
+            // Use "Personal Net Worth" when in per-person mode, "Household Net Worth" otherwise
+            const netWorthLabel = mode === 'person' ? "Personal Net Worth" : "Household Net Worth";
+            // data key is always "Household Net Worth" from the balance sheet; alias it
+            data[netWorthLabel] = data["Household Net Worth"];
 
             const labels = [
                 "Liabilities", "Mortgage Loans", "Personal Loans",
                 "Financial Institutions", "Housing & Development Board (HDB)",
                 "Credit/Charge Cards", "Motor Vehicle", "Others",
-                "Household Net Worth", "Assets", "Financial Assets",
+                netWorthLabel, "Assets", "Financial Assets",
                 "Residential Property Assets", "Currency & Deposits",
                 "Shares & Securities", "Life Insurance",
                 "Central Provident Fund (CPF)", "Pension Funds",
                 "Private Housing", "Public Housing",
                 "Listed Shares", "Unlisted Shares", "Unit Trusts & Investment Funds"
             ];
+
+            // Only show dollar values on the three summary nodes to avoid clutter
+            const labelsWithValues = new Set([netWorthLabel, "Assets", "Liabilities"]);
+            const labelWithValues = labels.map(l => {
+                const v = data[l];
+                if (labelsWithValues.has(l) && v && Math.abs(v) > 0) return `${l}<br>${formatDollars(v)}`;
+                return l;
+            });
 
             const sources = [], targets = [], values = [];
             function addLink(src, tgt, val) {
@@ -426,7 +678,7 @@
             addLink("Mortgage Loans",                   "Liabilities",                  data["Mortgage Loans"] || 0);
             addLink("Personal Loans",                   "Liabilities",                  data["Personal Loans"] || 0);
             addLink("Liabilities",                      "Assets",                       data["Liabilities"] || 0);
-            addLink("Household Net Worth",              "Assets",                       data["Household Net Worth"] || 0);
+            addLink(netWorthLabel,                        "Assets",                       data[netWorthLabel] || 0);
             addLink("Assets",                           "Financial Assets",             data["Financial Assets"] || 0);
             addLink("Assets",                           "Residential Property Assets",  data["Residential Property Assets"] || 0);
             addLink("Financial Assets",                 "Currency & Deposits",          data["Currency & Deposits"] || 0);
@@ -452,17 +704,18 @@
             const modeCount = mode === 'household'
                 ? (households ? `${(households / 1e3).toFixed(0)}k households` : '')
                 : (population ? `${(population / 1e6).toFixed(2)}M residents` : '');
-            const perPersonNote = `${modeLabel}${realSuffix}${modeCount ? ` · ${modeCount}` : ''}`;
+            const segLabel = selectedSegment !== 'Average' ? ` · ${selectedSegment}` : '';
+            const perPersonNote = `${modeLabel}${realSuffix}${modeCount ? ` · ${modeCount}` : ''}${segLabel}`;
 
             const plotData = [{
                 type: "sankey", orientation: "h",
-                textfont: { size: 14, color: "black", family: "Arial, sans-serif" },
+                textfont: { size: 12, color: "black", family: "Arial, sans-serif" },
                 node: {
                     pad: 15, thickness: 20,
                     line: { color: "black", width: 0.5 },
-                    label: labels,
+                    label: labelWithValues,
                     color: labels.map(l =>
-                        l === "Household Net Worth" ? "#6b7280"
+                        l === netWorthLabel ? "#6b7280"
                             : isLiabilityLabel(l) ? "#ef4444" : "#3b82f6"),
                     customdata: labels.map(l => formatDollars(data[l] || 0)),
                     hovertemplate: `%{label}<br />%{customdata} / ${mode === 'household' ? 'household' : 'person'}<extra></extra>`
@@ -475,9 +728,9 @@
             }];
 
             const layout = {
-                title: `Singapore Household Sector Balance Sheet 🇸🇬<br><span style="font-size:13px;">${formatQuarter(quarter)} — ${perPersonNote}</span>`,
-                font: { size: 14 },
-                margin: { l: 20, r: 20, t: 50, b: 20 },
+                title: `Singapore Household Sector Balance Sheet 🇸🇬<br><span style="font-size:12px;">${formatQuarter(quarter)} — ${perPersonNote}</span>`,
+                font: { size: 13 },
+                margin: { l: 20, r: 20, t: 55, b: 20 },
                 transition: { duration: 0 }
             };
 
@@ -487,13 +740,15 @@
                     plotDiv.on('plotly_hover', function(eventData) {
                         const point = eventData.points[0];
                         if (point.pointNumber !== undefined && point.label && !point.source) {
-                            if (point.label === "Household Net Worth" || point.label === "Assets") { hidePieChart(); return; }
-                            showPieChart(point.label, data[point.label] || 0, data["Household Net Worth"] || 1);
+                            const lbl = point.label.split('<br>')[0];
+                            if (lbl === netWorthLabel || lbl === "Assets") { hidePieChart(); return; }
+                            showPieChart(lbl, data[lbl] || 0, data[netWorthLabel] || 1);
                         } else if (point.source && point.target) {
-                            const src = point.source.label, tgt = point.target.label;
-                            if (src === "Household Net Worth" && tgt === "Assets") { hidePieChart(); return; }
-                            const liabilityNodes = ["Liabilities","Mortgage Loans","Personal Loans","Household Net Worth","Assets"];
-                            showPieChart(liabilityNodes.includes(tgt) ? src : tgt, point.value || 0, data["Household Net Worth"] || 1);
+                            const src = point.source.label.split('<br>')[0];
+                            const tgt = point.target.label.split('<br>')[0];
+                            if (src === netWorthLabel && tgt === "Assets") { hidePieChart(); return; }
+                            const liabilityNodes = ["Liabilities","Mortgage Loans","Personal Loans",netWorthLabel,"Assets"];
+                            showPieChart(liabilityNodes.includes(tgt) ? src : tgt, point.value || 0, data[netWorthLabel] || 1);
                         } else {
                             hidePieChart();
                         }
@@ -519,12 +774,12 @@
                 textposition: 'none', hoverinfo: 'label+percent', sort: false
             }], {
                 title: {
-                    text: `${pct}%<br><span style="font-size:11px;">${label}<br>(vs net worth)</span>`,
-                    font: { size: 14 }
+                    text: `${pct}%<br><span style="font-size:10px;">${label}<br>(vs net worth)</span>`,
+                    font: { size: 13 }
                 },
                 showlegend: false,
                 margin: { l: 10, r: 10, t: 55, b: 10 },
-                font: { size: 13 }
+                font: { size: 12 }
             }, { responsive: true });
         }
 
